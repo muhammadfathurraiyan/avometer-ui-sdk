@@ -1,8 +1,14 @@
+@layer ui-sdk;
+
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #2b1b11;
+  --foreground: #e9e3d4;
+  --ink: #221f18;
+  --paper: #efe8d7;
+  --brass: #c9a227;
+  --mat: #203c31;
 }
 
 @theme inline {
@@ -12,15 +18,1349 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
+  margin: 0;
+  min-height: 100%;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  background-color: #2c1b11;
+  background-image:
+    repeating-linear-gradient(
+      90.7deg,
+      rgba(24, 12, 7, 0.5) 0 1px,
+      rgba(255, 200, 150, 0.022) 1px 2px,
+      transparent 2px 6px
+    ),
+    repeating-linear-gradient(
+      89.1deg,
+      rgba(0, 0, 0, 0.16) 0 1px,
+      transparent 1px 9px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(8, 4, 2, 0.6) 0 2px,
+      rgba(255, 200, 150, 0.05) 2px 3px,
+      transparent 3px 173px
+    ),
+    radial-gradient(
+      1300px 900px at 16% -8%,
+      rgba(255, 199, 138, 0.18) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      900px 700px at 92% 108%,
+      rgba(0, 0, 0, 0.5) 0%,
+      transparent 62%
+    ),
+    repeating-linear-gradient(
+      90deg,
+      #3b2617 0 173px,
+      #34200f 173px 346px,
+      #40291a 346px 519px
+    );
+  background-attachment: fixed;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.45) 0%, transparent 16%),
+    radial-gradient(
+      120% 90% at 50% 0%,
+      transparent 38%,
+      rgba(0, 0, 0, 0.55) 100%
+    );
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- the bench ---------- */
+
+.bench-page {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 38px 24px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.bench-page__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 36px;
+  padding: 0 4px 18px;
+  border-bottom: 1px solid rgba(255, 220, 180, 0.18);
+}
+
+.bench-page__eyebrow {
+  margin: 0 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: #c8a988;
+}
+
+.bench-page__title {
+  margin: 0;
+  font-size: clamp(27px, 3vw, 36px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: #f8eddb;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+}
+
+.bench-page__note {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #dcc8b0;
+}
+
+.workshop {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 676px);
+  gap: 30px;
+  align-items: start;
+}
+
+/* ---------- components lying on the bench ---------- */
+
+.bench-area {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  padding-top: 8px;
+}
+
+.bench-area__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 14px;
+  padding: 0 6px 10px;
+  border-bottom: 1px solid rgba(255, 220, 180, 0.16);
+}
+
+.bench-area__head h2 {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #d8cdb8;
+}
+
+.bench-area__head span {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #bda78c;
+}
+
+.items {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 26px 6px;
+  padding: 14px 0 6px;
+}
+
+.item[data-slot="button"] {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px 8px 11px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  transform: rotate(var(--tilt, 0deg));
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.item[data-slot="button"]:hover {
+  background: rgba(255, 239, 214, 0.05);
+  border-color: rgba(255, 220, 180, 0.14);
+  transform: rotate(var(--tilt, 0deg)) translateY(-2px);
+}
+
+.item[data-clipped="red"],
+.item[data-clipped="black"],
+.item[data-clipped="both"] {
+  border-color: rgba(201, 162, 39, 0.45);
+  background: radial-gradient(
+    120% 90% at 50% 30%,
+    rgba(201, 162, 39, 0.14),
+    rgba(201, 162, 39, 0.03)
+  );
+}
+
+.item[data-slot="button"]:focus-visible {
+  outline: 2px solid #e8c56a;
+  outline-offset: 3px;
+}
+
+.item__body {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 164px;
+  height: 100px;
+}
+
+.item__glyph {
+  display: block;
+  width: 100%;
+  filter: drop-shadow(0 9px 7px rgba(0, 0, 0, 0.55));
+}
+
+.item__glyph .glyph {
+  width: 100%;
+  height: auto;
+}
+
+.item__post {
+  position: absolute;
+  bottom: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #2a1c08;
+  background: radial-gradient(
+    circle at 36% 30%,
+    #f8e7a8 0%,
+    #c19634 52%,
+    #6d4c0f 100%
+  );
+  box-shadow:
+    0 3px 6px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  transition: box-shadow 140ms ease;
+}
+
+.item__post[data-side="plus"] {
+  left: 2px;
+}
+
+.item__post[data-side="minus"] {
+  right: 2px;
+}
+
+.item__post-hole {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #241703;
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.9);
+}
+
+.item__post-mark {
+  position: absolute;
+  left: 50%;
+  bottom: -14px;
+  transform: translateX(-50%);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 8px;
+  font-weight: 700;
+  color: #d8b970;
+}
+
+.item__post[data-clipped="true"] {
+  box-shadow:
+    0 0 0 3px rgba(201, 162, 39, 0.32),
+    0 3px 6px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.item__post[data-hot="true"] {
+  box-shadow:
+    0 0 0 4px rgba(126, 226, 152, 0.55),
+    0 0 20px rgba(126, 226, 152, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.item__tag {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  max-width: 100%;
+  padding: 3px 9px 4px;
+  border-radius: 2px;
+  background: #e8dec8;
+  color: #2c2418;
+  text-align: center;
+  box-shadow: 0 4px 9px rgba(0, 0, 0, 0.4);
+  transform: rotate(calc(var(--tilt, 0deg) * -0.6));
+}
+
+.item__tag strong {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.item__tag span {
+  font-size: 8px;
+  letter-spacing: 0.04em;
+  color: #6c5d45;
+  white-space: nowrap;
+}
+
+.bench-area__hint {
+  margin: 0;
+  padding: 0 6px;
+  font-size: 10px;
+  line-height: 1.55;
+  color: #c0aa8f;
+}
+
+/* ---------- leads, wires and probes ---------- */
+
+.cable-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+
+.cable-layer[data-ready="true"] {
+  opacity: 1;
+}
+
+.probe-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.probe-layer[data-ready="true"] {
+  opacity: 1;
+}
+
+.wiring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.wire {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.45));
+}
+
+.wire--black {
+  stroke: #0d0f12;
+  stroke-width: 6;
+}
+
+.wire--red {
+  stroke: #8e2013;
+  stroke-width: 6;
+}
+
+.wire--shine {
+  stroke: rgba(255, 226, 204, 0.22);
+  stroke-width: 1.2;
+  transform: translateY(-1px);
+  filter: none;
+}
+
+.wire-group--black .wire--shine {
+  stroke: rgba(210, 220, 230, 0.2);
+}
+
+/* the probes themselves: a Button so agents and keyboards can reach them */
+
+.probe-button[data-slot="button"] {
+  position: absolute;
+  z-index: 2;
+  width: 96px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+  pointer-events: auto;
+  user-select: none;
+  transform: translate(-100%, -50%) rotate(var(--probe-angle));
+  transform-origin: 100% 50%;
+  transition: filter 140ms ease;
+}
+
+.probe-button[data-slot="button"]:hover {
+  filter: brightness(1.08);
+}
+
+.probe-button[data-slot="button"]:focus-visible {
+  outline: none;
+}
+
+.probe-button[data-slot="button"]:focus-visible .probe-button__grip {
+  box-shadow:
+    0 0 0 2px #e8c56a,
+    0 0 14px rgba(232, 197, 106, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.probe-button[data-dragging="true"] {
+  z-index: 9;
+  cursor: grabbing;
+  filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.55));
+}
+
+.probe-button[data-taut="true"] .probe-button__grip {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.45),
+    0 2px 3px rgba(0, 0, 0, 0.5);
+}
+
+.probe-button__grip {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 72px;
+  height: 18px;
+  margin-top: -9px;
+  border-radius: 9px 4px 4px 9px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.45),
+    0 2px 3px rgba(0, 0, 0, 0.5);
+}
+
+.probe-button--red .probe-button__grip {
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.2) 0 2px,
+      transparent 2px 7px
+    ),
+    linear-gradient(180deg, #e4604f 0%, #a72a1f 48%, #64120c 100%);
+}
+
+.probe-button--black .probe-button__grip {
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.22) 0 2px,
+      transparent 2px 7px
+    ),
+    linear-gradient(180deg, #4c525a 0%, #23272c 48%, #0d0f12 100%);
+}
+
+.probe-button__neck {
+  position: absolute;
+  left: 70px;
+  top: 50%;
+  width: 12px;
+  height: 7px;
+  margin-top: -3.5px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #eef1f3, #8f969d 62%, #5e656c);
+}
+
+.probe-button__tip {
+  position: absolute;
+  left: 80px;
+  top: 50%;
+  width: 20px;
+  height: 3px;
+  margin-top: -1.5px;
+  background: linear-gradient(180deg, #f7f9fa, #a7aeb5 58%, #6d747b);
+  clip-path: polygon(0 0, 100% 34%, 100% 66%, 0 100%);
+}
+
+.glyph {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ---------- bench notes ---------- */
+
+.notes {
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.55);
+  background: linear-gradient(180deg, #24262a 0%, #17191c 100%);
+  box-shadow:
+    0 24px 40px -30px rgba(0, 0, 0, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  padding: 13px 16px 14px;
+}
+
+.notes__title {
+  margin: 0 0 9px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #c8a988;
+}
+
+.notes__list {
+  margin: 0;
+  padding: 0 0 0 19px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: #c5bda8;
+}
+
+.notes__list li::marker {
+  color: #c9a227;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+}
+
+.notes__list strong {
+  color: #efe6d2;
+  font-weight: 600;
+}
+
+/* ---------- the instrument ---------- */
+
+.avometer {
+  position: relative;
+  z-index: 0;
+  justify-self: end;
+  width: 100%;
+  max-width: 386px;
+  margin-top: 26px;
+  padding: 9px;
+  border-radius: 32px;
+  border: 1px solid #8a4505;
+  background: linear-gradient(
+    160deg,
+    #ffc04c 0%,
+    #f7941d 38%,
+    #e07b0d 72%,
+    #bb5b06 100%
+  );
+  box-shadow:
+    0 44px 76px -36px rgba(0, 0, 0, 0.95),
+    0 12px 22px rgba(0, 0, 0, 0.5),
+    inset 0 2px 0 rgba(255, 236, 200, 0.55),
+    inset 0 -3px 10px rgba(90, 40, 0, 0.45);
+}
+
+.avometer__bumper {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 226, 180, 0.32),
+    inset 0 0 26px rgba(96, 40, 0, 0.28);
+}
+
+.avometer__face {
+  position: relative;
+  padding: 12px 13px 9px;
+  border-radius: 25px;
+  background: radial-gradient(
+    120% 70% at 30% 0%,
+    #26282b 0%,
+    #17181a 46%,
+    #0c0d0e 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px #2c2e31,
+    inset 0 2px 10px rgba(0, 0, 0, 0.85),
+    0 1px 0 rgba(255, 214, 160, 0.3);
+  color: #d7d2c6;
+}
+
+.dmm-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 4px 10px;
+  color: #ff8f26;
+}
+
+.dmm-brand {
+  font-size: 16px;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 0.14em;
+}
+
+.dmm-model {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.dmm-screen {
+  position: relative;
+  padding: 8px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #2b2d30 0%, #111214 100%);
+  box-shadow:
+    inset 0 2px 8px rgba(0, 0, 0, 0.85),
+    0 1px 0 rgba(255, 230, 190, 0.22);
+}
+
+.dmm-screen__glare {
+  position: absolute;
+  inset: 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  background: linear-gradient(
+    114deg,
+    rgba(255, 255, 255, 0.36) 0%,
+    rgba(255, 255, 255, 0.07) 26%,
+    transparent 46%
+  );
+  opacity: 0.5;
+}
+
+/* ---------- LCD readout ---------- */
+
+.readout {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 122px;
+  padding: 7px 10px 6px;
+  border-radius: 4px;
+  border: 1px solid #6c7267;
+  background: linear-gradient(180deg, #cfd4c5 0%, #b5bbac 100%);
+  color: #20241d;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.28),
+    0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.readout[data-powered="false"] {
+  color: rgba(27, 36, 23, 0.18);
+}
+
+.readout__bar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.readout__bar--foot {
+  opacity: 0.6;
+  font-size: 7px;
+  font-weight: 500;
+}
+
+.readout__flags {
+  color: #7e2f1c;
+}
+
+.readout__digits {
+  min-height: 54px;
+  font-size: clamp(30px, 8.4vw, 44px);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+  white-space: pre;
+}
+
+.readout[data-over="true"] .readout__digits {
+  letter-spacing: 0.16em;
+}
+
+/* ---------- buttons ---------- */
+
+.dmm-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  padding: 0 1px;
+}
+
+.dmm-button[data-slot="toggle"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #070808;
+  background: linear-gradient(180deg, #40444a 0%, #212327 100%);
+  color: #e7e3d9;
+  font-family: inherit;
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.dmm-button--power[data-slot="toggle"] {
+  background: linear-gradient(180deg, #4a4e55 0%, #26282c 100%);
+}
+
+.dmm-button--hold[data-slot="toggle"][data-pressed] {
+  background: linear-gradient(180deg, #ff9830 0%, #d86c06 100%);
+  color: #341d00;
+  box-shadow:
+    inset 0 2px 4px rgba(90, 40, 0, 0.4),
+    0 1px 0 rgba(255, 220, 170, 0.25);
+}
+
+.dmm-button__lamp {
+  display: block;
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4b3a1a;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.dmm-button__lamp[data-on="true"] {
+  background: #5dff88;
+  box-shadow: 0 0 7px rgba(93, 255, 136, 0.9);
+}
+
+.dmm-auto {
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #ff8f26;
+  white-space: nowrap;
+}
+
+.dmm-beep {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #cbc6ba;
+  cursor: pointer;
+}
+
+.dmm-beep [data-slot="switch"] {
+  position: relative;
+  width: 32px;
+  height: 17px;
+  border-radius: 999px;
+  border: 1px solid #050607;
+  background: #1c1e21;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.65);
+  cursor: pointer;
+}
+
+.dmm-beep [data-slot="switch"][data-checked] {
+  background: #2b6b3f;
+  border-color: #14301e;
+}
+
+.dmm-beep [data-slot="switch-thumb"] {
+  display: block;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #cfc9bb;
+  transform: translateX(2px);
+  transition: transform 160ms ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.dmm-beep [data-slot="switch"][data-checked] [data-slot="switch-thumb"] {
+  transform: translateX(17px);
+  background: #eaf7ee;
+}
+
+.dmm-beep__lamp {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4a3614;
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.7);
+}
+
+.dmm-beep__lamp[data-on="true"] {
+  background: #ffcf4a;
+  box-shadow: 0 0 8px rgba(255, 207, 74, 0.9);
+}
+
+/* ---------- function dial ---------- */
+
+.dmm-dial {
+  display: grid;
+  place-items: center;
+  margin: 10px auto 8px;
+}
+
+.dial {
+  --dial-size: 286px;
+  --dial-radius: calc(var(--dial-size) * 0.435);
+  position: relative;
+  width: var(--dial-size);
+  height: var(--dial-size);
+  flex: none;
+}
+
+.dial__knob {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: calc(var(--dial-size) * 0.44);
+  height: calc(var(--dial-size) * 0.44);
+  margin: calc(var(--dial-size) * -0.22) 0 0 calc(var(--dial-size) * -0.22);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.12), transparent 62%),
+    repeating-conic-gradient(from 0deg, #3d3d3a 0deg 2.4deg, #111110 2.4deg 4.8deg);
+  border: 3px solid #080808;
+  box-shadow:
+    0 12px 22px rgba(0, 0, 0, 0.75),
+    inset 0 2px 3px rgba(255, 255, 255, 0.12),
+    inset 0 -5px 12px rgba(0, 0, 0, 0.85);
+  cursor: grab;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.dial__knob[data-dragging="true"] {
+  cursor: grabbing;
+  box-shadow:
+    0 6px 14px rgba(0, 0, 0, 0.8),
+    inset 0 2px 3px rgba(255, 255, 255, 0.12),
+    inset 0 -5px 12px rgba(0, 0, 0, 0.85);
+}
+
+.dial__cap {
+  position: absolute;
+  inset: 27%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 36% 28%,
+    #4c4c48 0%,
+    #282825 42%,
+    #0c0c0b 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.7);
+}
+
+.dial__grip {
+  position: absolute;
+  inset: 7%;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+}
+
+.dial__pointer {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  transform: rotate(var(--knob-angle));
+  pointer-events: none;
+  transition: transform 140ms cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.dial__knob[data-dragging="true"] .dial__pointer {
+  transition: none;
+}
+
+.dial__pointer::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 2%;
+  width: 6.5%;
+  height: 39%;
+  margin-left: -3.25%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fffdf5 0%, #e6e0d0 55%, #b3ad9e 100%);
+  box-shadow:
+    0 0 9px rgba(255, 246, 220, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.85);
+}
+
+.dial__stops {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.dial__stop {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 42px;
+  height: 30px;
+  margin: -15px 0 0 -21px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #e9e5da;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  cursor: pointer;
+  pointer-events: auto;
+  transform: rotate(var(--stop-angle)) translateY(calc(var(--dial-radius) * -1))
+    rotate(calc(var(--stop-angle) * -1));
+}
+
+.dial__stop[data-checked] {
+  color: #ffffff;
+  text-shadow: 0 0 9px rgba(255, 152, 48, 0.9);
+}
+
+.dial__stop [data-slot="radio-indicator"] {
+  position: absolute;
+  left: 50%;
+  bottom: -2px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.dial__stop[data-checked] [data-slot="radio-indicator"] {
+  background: #ff9633;
+  box-shadow: 0 0 6px rgba(255, 150, 51, 0.9);
+}
+
+.dial__print {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  pointer-events: none;
+}
+
+.dial__tag {
+  font-size: 5.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ff9633;
+  opacity: 0.85;
+}
+
+.dial__value {
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.dial__stop[data-group="OFF"] .dial__value {
+  color: #ffb35c;
+}
+
+/* ---------- jacks and controls ---------- */
+
+.avometer__terminals {
+  margin-top: 8px;
+  padding: 9px 2px 2px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.jacks {
+  display: flex;
+  justify-content: space-around;
+  gap: 10px;
+}
+
+.jack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.jack__socket {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 3px solid #060708;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.7),
+    inset 0 2px 3px rgba(255, 255, 255, 0.16);
+}
+
+.jack__socket::after {
+  content: "";
+  position: absolute;
+  inset: 11px;
+  border-radius: 50%;
+  background: #05060700;
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.9);
+}
+
+.jack__socket--red { background: radial-gradient(circle at 32% 26%, #e05a4a, #8e1c12 70%); }
+.jack__socket--black { background: radial-gradient(circle at 32% 26%, #4a5058, #101215 70%); }
+.jack__socket--10a {
+  background: radial-gradient(circle at 32% 26%, #d8b45a, #8a6a14 70%);
+}
+
+.jack__label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #ded9cc;
+}
+
+.jack__note {
+  font-size: 5.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7f7a70;
+}
+
+.zero {
+  padding: 6px 9px 3px;
+  border-radius: 7px;
+  background: linear-gradient(180deg, #212226, #121315);
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.85),
+    0 1px 0 rgba(255, 220, 170, 0.12);
+}
+
+.zero__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #b9b4a8;
+}
+
+.zero__value {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0;
+  color: #ffb057;
+}
+
+.zero__control {
+  display: flex;
+  align-items: center;
+  height: 22px;
+}
+
+.zero__track {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #0a0c0e, #23272d);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.85);
+}
+
+.zero__indicator {
+  background: #c9a227;
+  opacity: 0.4;
+}
+
+.zero__thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background:
+    repeating-conic-gradient(from 0deg, #454b53 0deg 12deg, #24282d 12deg 24deg);
+  border: 1px solid #6b7178;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  cursor: grab;
+}
+
+.zero__thumb:has(:focus-visible) {
+  outline: 2px solid #e8c56a;
+  outline-offset: 2px;
+}
+
+.dmm-trim {
+  margin: 8px 0 0;
+}
+
+.dmm-status {
+  margin: 8px 2px 0;
+  min-height: 15px;
+  font-size: 10px;
+  line-height: 1.45;
+  color: #f3a44c;
+  font-style: italic;
+  text-align: center;
+}
+
+.dmm-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 6.5px;
+  letter-spacing: 0.12em;
+  color: #7c786f;
+}
+
+.avometer__sticker {
+  color: #c9a227;
+}
+
+.dmm-button:focus-visible,
+.dial__stop:focus-visible,
+.dmm-beep [data-slot="switch"]:focus-visible {
+  outline: 2px solid #ffb257;
+  outline-offset: 2px;
+}
+
+@media (max-width: 1180px) {
+  .workshop {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 34px;
+  }
+
+  .avometer {
+    order: -1;
+    margin-top: 18px;
+    width: 100%;
+    max-width: 404px;
+    justify-self: center;
+  }
+
+  .item__body {
+    max-width: 190px;
+    height: 118px;
+  }
+}
+
+@media (max-width: 860px) {
+  .items {
+    gap: 22px 4px;
+  }
+
+  .item__body {
+    max-width: 150px;
+    height: 96px;
+  }
+
+  .avometer {
+    margin-top: 14px;
+  }
+}
+
+@media (max-width: 720px) {
+  .bench-page {
+    padding: 24px 12px 44px;
+    gap: 18px;
+  }
+
+  .avometer {
+    margin-top: 10px;
+    border-radius: 27px;
+    padding: 7px;
+  }
+
+  .avometer__face {
+    border-radius: 21px;
+    padding: 10px 10px 8px;
+  }
+
+  .dmm-head {
+    padding: 2px 3px 8px;
+  }
+
+  .dmm-buttons {
+    flex-wrap: wrap;
+  }
+
+  .dmm-screen {
+    padding: 6px;
+  }
+
+  .dmm-screen__glare {
+    inset: 6px;
+  }
+
+  .readout {
+    min-height: 112px;
+  }
+
+  .readout__digits {
+    font-size: clamp(28px, 10vw, 40px);
+  }
+
+  .dial {
+    --dial-size: 262px;
+  }
+
+  .dial__stop {
+    width: 38px;
+    height: 28px;
+    margin: -14px 0 0 -19px;
+  }
+
+  .dial__value {
+    font-size: 8.5px;
+  }
+
+  .avometer__terminals {
+    padding: 7px 2px 2px;
+  }
+
+  .avometer__terminals .jack__socket {
+    width: 34px;
+    height: 34px;
+  }
+
+  .jack__socket::after {
+    inset: 10px;
+  }
+
+  .items {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 2px;
+  }
+
+  .item__body {
+    max-width: 148px;
+    height: 94px;
+  }
+
+  .bench-area__head span {
+    display: none;
+  }
+
+  .notes {
+    padding: 12px 13px;
+  }
+}
+
+@media (max-width: 430px) {
+  .dial {
+    --dial-size: 238px;
+  }
+
+  .dial__tag {
+    font-size: 5px;
+  }
+
+  .dial__value {
+    font-size: 8px;
+  }
+
+  .item__body {
+    max-width: 132px;
+    height: 86px;
+  }
+
+  .item__tag strong {
+    font-size: 9.5px;
+  }
+
+  .item__tag span {
+    font-size: 7.5px;
+  }
+
+  .bench-area__hint {
+    font-size: 9.5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item[data-slot="button"],
+  .probe-button[data-slot="button"],
+  .dmm-beep [data-slot="switch-thumb"],
+  .cable-layer {
+    transition-duration: 0ms;
+  }
 }
