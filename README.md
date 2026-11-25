@@ -37,8 +37,10 @@ npm run build     # production build
   a spoken label such as “Digital reading: 1.583 volts”, and the digits themselves
   are decorative to assistive technology.
 - **Probes wired into the meter** — the red lead is fixed to `VΩmA`, the black to
-  `COM`, and the cables are drawn from those jacks to the probe handles. A probe
-  can only travel as far as its lead allows; the cable goes taut at the limit.
+  `COM`, and the cables are drawn from those jacks to the probe handles. The leads
+  are simulated as weighted rope: they sag under their own weight, trail the hand
+  while dragged, and settle without bouncing. A probe can only travel as far as its
+  lead allows; the cable goes taut at the limit.
 - **Two ways to probe** — drag a probe onto a post, or click a component to clip
   both probes to its two posts. Click a probe (or press ← → while it is focused)
   to step through the test points; the cable follows.
@@ -84,8 +86,8 @@ are real buttons layered above it.
 ```
 components/avometer/
   avometer.tsx        state, measurement wiring, agent registration
-  bench-items.tsx      the nine components, posts and bench notes
-  probe-layer.tsx      cable geometry, probe dragging, contact lookup
+  bench-items.tsx      the nine components, posts and tags
+  probe-layer.tsx      rope-simulated cables, probe dragging, contact lookup
   digital-readout.tsx  LCD display
   rotary-selector.tsx  19-detent range dial
   part-glyph.tsx       SVG drawings for each component

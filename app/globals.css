@@ -110,41 +110,6 @@ body::before {
   gap: 24px;
 }
 
-.bench-page__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px 36px;
-  padding: 0 4px 18px;
-  border-bottom: 1px solid rgba(255, 220, 180, 0.18);
-}
-
-.bench-page__eyebrow {
-  margin: 0 0 6px;
-  font-size: 11px;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
-  color: #c8a988;
-}
-
-.bench-page__title {
-  margin: 0;
-  font-size: clamp(27px, 3vw, 36px);
-  line-height: 1.05;
-  letter-spacing: -0.02em;
-  color: #f8eddb;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
-}
-
-.bench-page__note {
-  margin: 0;
-  max-width: 46ch;
-  font-size: 13px;
-  line-height: 1.6;
-  color: #dcc8b0;
-}
-
 .workshop {
   position: relative;
   display: grid;
@@ -163,31 +128,6 @@ body::before {
   gap: 16px;
   min-width: 0;
   padding-top: 8px;
-}
-
-.bench-area__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 4px 14px;
-  padding: 0 6px 10px;
-  border-bottom: 1px solid rgba(255, 220, 180, 0.16);
-}
-
-.bench-area__head h2 {
-  margin: 0;
-  font-size: 11px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: #d8cdb8;
-}
-
-.bench-area__head span {
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #bda78c;
 }
 
 .items {
@@ -349,14 +289,6 @@ body::before {
   letter-spacing: 0.04em;
   color: #6c5d45;
   white-space: nowrap;
-}
-
-.bench-area__hint {
-  margin: 0;
-  padding: 0 6px;
-  font-size: 10px;
-  line-height: 1.55;
-  color: #c0aa8f;
 }
 
 /* ---------- leads, wires and probes ---------- */
@@ -531,49 +463,6 @@ body::before {
   display: block;
   width: 100%;
   height: auto;
-}
-
-/* ---------- bench notes ---------- */
-
-.notes {
-  border-radius: 16px;
-  border: 1px solid rgba(0, 0, 0, 0.55);
-  background: linear-gradient(180deg, #24262a 0%, #17191c 100%);
-  box-shadow:
-    0 24px 40px -30px rgba(0, 0, 0, 0.9),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  padding: 13px 16px 14px;
-}
-
-.notes__title {
-  margin: 0 0 9px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: #c8a988;
-}
-
-.notes__list {
-  margin: 0;
-  padding: 0 0 0 19px;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  font-size: 11.5px;
-  line-height: 1.55;
-  color: #c5bda8;
-}
-
-.notes__list li::marker {
-  color: #c9a227;
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 10px;
-}
-
-.notes__list strong {
-  color: #efe6d2;
-  font-weight: 600;
 }
 
 /* ---------- the instrument ---------- */
@@ -1178,24 +1067,6 @@ body::before {
   text-align: center;
 }
 
-.dmm-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 8px;
-  padding-top: 7px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 6.5px;
-  letter-spacing: 0.12em;
-  color: #7c786f;
-}
-
-.avometer__sticker {
-  color: #c9a227;
-}
-
 .dmm-button:focus-visible,
 .dial__stop:focus-visible,
 .dmm-beep [data-slot="switch"]:focus-visible {
@@ -1315,14 +1186,6 @@ body::before {
     max-width: 148px;
     height: 94px;
   }
-
-  .bench-area__head span {
-    display: none;
-  }
-
-  .notes {
-    padding: 12px 13px;
-  }
 }
 
 @media (max-width: 430px) {
@@ -1349,10 +1212,6 @@ body::before {
 
   .item__tag span {
     font-size: 7.5px;
-  }
-
-  .bench-area__hint {
-    font-size: 9.5px;
   }
 }
 

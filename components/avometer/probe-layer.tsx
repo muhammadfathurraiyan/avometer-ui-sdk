@@ -1,6 +1,12 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react"
 import { Button } from "@ui-sdk/react/button"
 import { SUBJECTS } from "@/lib/measurement"
 
@@ -35,7 +41,7 @@ export interface BenchGeometry {
   terminals: Record<string, Point>
   jacks: Record<Lead, Point>
   reach: Record<Lead, number>
-  meter: { left: number; bottom: number }
+  meter: { left: number; top: number; right: number; bottom: number }
 }
 
 const CONTACT_HIT = 28
@@ -172,6 +178,8 @@ export function useProbes(sceneRef: React.RefObject<HTMLDivElement | null>) {
     const meterRect = meterElement?.getBoundingClientRect()
     const meter = {
       left: (meterRect?.left ?? 0) - rect.left,
+      top: (meterRect?.top ?? 0) - rect.top,
+      right: (meterRect?.right ?? 0) - rect.left,
       bottom: (meterRect?.bottom ?? 0) - rect.top,
     }
     const reachFrom = (jack: Point) => {
@@ -395,8 +403,270 @@ function cablePath(
   return `M ${n(start.x)} ${n(start.y)} C ${n(c1x)} ${n(c1y)} ${n(c2x)} ${n(c2y)} ${n(end.x)} ${n(end.y)}`
 }
 
+const LEADS = ["red", "black"] as const
+const ROPE_STEP = 1 / 60
+const ROPE_GRAVITY = 1500
+const ROPE_DAMPING = 0.7
+const ROPE_PASSES = 18
+
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? useEffect : useLayoutEffect
+
+interface RopePoint extends Point {
+  px: number
+  py: number
+}
+
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false)
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)")
+    setReduced(query.matches)
+    const update = (event: MediaQueryListEvent) => setReduced(event.matches)
+    query.addEventListener("change", update)
+    return () => query.removeEventListener("change", update)
+  }, [])
+  return reduced
+}
+
+function ropeSegments(reach: number) {
+  return clamp(Math.round(reach / 18), 32, 72)
+}
+
+function makeRope(jack: Point, end: Point, reach: number): RopePoint[] {
+  const segments = ropeSegments(reach)
+  const dx = end.x - jack.x
+  const dy = end.y - jack.y
+  const chord = Math.hypot(dx, dy) || 1
+  const excess = Math.max(0, reach - chord)
+  const sag = Math.min(chord * 0.42, Math.sqrt((3 * chord * excess) / 8))
+  const points: RopePoint[] = []
+  for (let index = 0; index <= segments; index += 1) {
+    const t = index / segments
+    const x = jack.x + dx * t
+    const y = jack.y + dy * t + Math.sin(Math.PI * t) * sag
+    points.push({ x, y, px: x, py: y })
+  }
+  return points
+}
+
+/** One fixed-step Verlet pass: gravity, then length and pin constraints. */
+function stepRope(points: RopePoint[], jack: Point, end: Point, reach: number) {
+  const last = points.length - 1
+  const gravity = ROPE_GRAVITY * ROPE_STEP * ROPE_STEP
+
+  for (let index = 1; index < last; index += 1) {
+    const point = points[index]
+    const vx = (point.x - point.px) * ROPE_DAMPING
+    const vy = (point.y - point.py) * ROPE_DAMPING
+    point.px = point.x
+    point.py = point.y
+    point.x += vx
+    point.y += vy + gravity
+  }
+
+  const rest = reach / last
+  for (let pass = 0; pass < ROPE_PASSES; pass += 1) {
+    for (let index = 0; index < last; index += 1) {
+      const a = points[index]
+      const b = points[index + 1]
+      const dx = b.x - a.x
+      const dy = b.y - a.y
+      const distance = Math.hypot(dx, dy) || 0.0001
+      const diff = (distance - rest) / distance
+      const aPinned = index === 0
+      const bPinned = index + 1 === last
+      if (aPinned && bPinned) continue
+      const wa = aPinned ? 0 : bPinned ? 1 : 0.5
+      const wb = bPinned ? 0 : aPinned ? 1 : 0.5
+      a.x += dx * diff * wa
+      a.y += dy * diff * wa
+      b.x -= dx * diff * wb
+      b.y -= dy * diff * wb
+    }
+    points[0].x = jack.x
+    points[0].y = jack.y
+    points[last].x = end.x
+    points[last].y = end.y
+  }
+
+  // Static friction: a lead lying on the bench stops instead of creeping.
+  for (let index = 1; index < last; index += 1) {
+    const point = points[index]
+    if (Math.hypot(point.x - point.px, point.y - point.py) < 0.09) {
+      point.px = point.x
+      point.py = point.y
+    }
+  }
+}
+
+/** One round of Chaikin corner cutting, so tension kinks read as a bend. */
+function smoothRope(points: RopePoint[]): Point[] {
+  if (points.length < 3) return points
+  const next: Point[] = [points[0]]
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const a = points[index]
+    const b = points[index + 1]
+    const cut = {
+      x: a.x * 0.75 + b.x * 0.25,
+      y: a.y * 0.75 + b.y * 0.25,
+    }
+    const cut2 = {
+      x: a.x * 0.25 + b.x * 0.75,
+      y: a.y * 0.25 + b.y * 0.75,
+    }
+    next.push(cut, cut2)
+  }
+  next.push(points[points.length - 1])
+  return next
+}
+
+/** Catmull-Rom through the rope samples, emitted as cubic segments. */
+function ropePath(points: Point[]) {
+  const n = (value: number) => value.toFixed(1)
+  const count = points.length
+  let d = `M ${n(points[0].x)} ${n(points[0].y)}`
+  for (let index = 0; index < count - 1; index += 1) {
+    const p0 = points[Math.max(0, index - 1)]
+    const p1 = points[index]
+    const p2 = points[index + 1]
+    const p3 = points[Math.min(count - 1, index + 2)]
+    const c1x = p1.x + (p2.x - p0.x) / 6
+    const c1y = p1.y + (p2.y - p0.y) / 6
+    const c2x = p2.x - (p3.x - p1.x) / 6
+    const c2y = p2.y - (p3.y - p1.y) / 6
+    d += ` C ${n(c1x)} ${n(c1y)} ${n(c2x)} ${n(c2y)} ${n(p2.x)} ${n(p2.y)}`
+  }
+  return d
+}
+
 export function CableLayer({ bench }: { bench: ReturnType<typeof useProbes> }) {
   const { probes, geometry } = bench
+  const reduced = usePrefersReducedMotion()
+  const baseRefs = useRef<Partial<Record<Lead, SVGPathElement | null>>>({})
+  const shineRefs = useRef<Partial<Record<Lead, SVGPathElement | null>>>({})
+  const probesRef = useRef(probes)
+  probesRef.current = probes
+  const wakeRef = useRef<(() => void) | null>(null)
+
+  const paint = useCallback((paths: Record<Lead, string>) => {
+    for (const lead of LEADS) {
+      baseRefs.current[lead]?.setAttribute("d", paths[lead])
+      shineRefs.current[lead]?.setAttribute("d", paths[lead])
+    }
+  }, [])
+
+  // The leads behave like weighted cable: the jack end is fixed, the probe end
+  // follows the hand, and the rest of the run lags, sags and settles.
+  useIsomorphicLayoutEffect(() => {
+    if (!geometry || reduced) return
+    const ropes = {
+      red: makeRope(geometry.jacks.red, buttOf(probesRef.current.red, "red"), geometry.reach.red),
+      black: makeRope(
+        geometry.jacks.black,
+        buttOf(probesRef.current.black, "black"),
+        geometry.reach.black
+      ),
+    }
+
+    const draw = () =>
+      paint({
+        red: ropePath(smoothRope(ropes.red)),
+        black: ropePath(smoothRope(ropes.black)),
+      })
+    draw()
+
+    const previous = {
+      red: ropes.red.map((point) => ({ x: point.x, y: point.y })),
+      black: ropes.black.map((point) => ({ x: point.x, y: point.y })),
+    }
+    const freePoints = ropes.red.length + ropes.black.length - 4
+    let frameId = 0
+    let running = false
+    let lastTime = 0
+    let accumulator = 0
+    const frame = (now: number) => {
+      accumulator = Math.min(accumulator + (now - lastTime) / 1000, ROPE_STEP * 3)
+      lastTime = now
+      let stepped = 0
+      while (accumulator >= ROPE_STEP && stepped < 3) {
+        stepRope(
+          ropes.red,
+          geometry.jacks.red,
+          buttOf(probesRef.current.red, "red"),
+          geometry.reach.red
+        )
+        stepRope(
+          ropes.black,
+          geometry.jacks.black,
+          buttOf(probesRef.current.black, "black"),
+          geometry.reach.black
+        )
+        accumulator -= ROPE_STEP
+        stepped += 1
+      }
+      if (stepped === 3) accumulator = 0
+      if (stepped) draw()
+
+      let drift = 0
+      for (const lead of LEADS) {
+        const points = ropes[lead]
+        const last = points.length - 2
+        for (let index = 1; index <= last; index += 1) {
+          drift += Math.abs(points[index].x - previous[lead][index].x)
+          drift += Math.abs(points[index].y - previous[lead][index].y)
+          previous[lead][index].x = points[index].x
+          previous[lead][index].y = points[index].y
+        }
+      }
+      // Once the cable stops moving, park the loop until it is disturbed again.
+      ;(window as unknown as { __cableDrift?: number }).__cableDrift = drift / freePoints
+      if (stepped && drift / freePoints < 0.02) {
+        running = false
+        return
+      }
+      frameId = requestAnimationFrame(frame)
+    }
+    const wake = () => {
+      if (running) return
+      running = true
+      lastTime = performance.now()
+      accumulator = 0
+      frameId = requestAnimationFrame(frame)
+    }
+    wakeRef.current = wake
+    wake()
+    return () => {
+      wakeRef.current = null
+      running = false
+      cancelAnimationFrame(frameId)
+    }
+  }, [geometry, reduced, paint])
+
+  useIsomorphicLayoutEffect(() => {
+    wakeRef.current?.()
+  }, [probes])
+
+  // With reduced motion the leads are still drawn, just without the swing.
+  useIsomorphicLayoutEffect(() => {
+    if (!geometry || !reduced) return
+    paint({
+      red: cablePath(
+        geometry.jacks.red,
+        buttOf(probes.red, "red"),
+        geometry.reach.red,
+        geometry.meter,
+        "red"
+      ),
+      black: cablePath(
+        geometry.jacks.black,
+        buttOf(probes.black, "black"),
+        geometry.reach.black,
+        geometry.meter,
+        "black"
+      ),
+    })
+  }, [geometry, reduced, probes, paint])
 
   return (
     <div className="cable-layer" data-ready={geometry ? "true" : "false"} aria-hidden="true">
@@ -407,22 +677,22 @@ export function CableLayer({ bench }: { bench: ReturnType<typeof useProbes> }) {
           preserveAspectRatio="none"
           focusable="false"
         >
-          {(["black", "red"] as const).map((lead) => {
-            const probe = probes[lead]
-            const d = cablePath(
-              geometry.jacks[lead],
-              buttOf(probe, lead),
-              geometry.reach[lead],
-              geometry.meter,
-              lead
-            )
-            return (
-              <g key={lead} className={`wire-group wire-group--${lead}`}>
-                <path d={d} className={`wire wire--${lead}`} />
-                <path d={d} className="wire wire--shine" />
-              </g>
-            )
-          })}
+          {LEADS.map((lead) => (
+            <g key={lead} className={`wire-group wire-group--${lead}`}>
+              <path
+                ref={(element) => {
+                  baseRefs.current[lead] = element
+                }}
+                className={`wire wire--${lead}`}
+              />
+              <path
+                ref={(element) => {
+                  shineRefs.current[lead] = element
+                }}
+                className="wire wire--shine"
+              />
+            </g>
+          ))}
         </svg>
       ) : null}
     </div>
@@ -461,7 +731,7 @@ export function ProbeLayer({ bench }: { bench: ReturnType<typeof useProbes> }) {
             aria-label={`${lead === "red" ? "Red" : "Black"} probe, ${contactLabel(
               probe.contact
             )}`}
-            aria-describedby="probe-help bench-hint"
+            aria-describedby="probe-help"
             data-contact={probe.contact ? contactKey(probe.contact) : "free"}
             data-dragging={dragging === lead ? "true" : "false"}
             data-taut={taut ? "true" : "false"}

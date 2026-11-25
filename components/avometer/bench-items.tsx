@@ -21,12 +21,7 @@ export function BenchItems({
   if (probes.black.contact) attached.add(contactKey(probes.black.contact))
 
   return (
-    <section className="bench-area" aria-labelledby="bench-title">
-      <div className="bench-area__head">
-        <h2 id="bench-title">On the bench</h2>
-        <span>9 components · drag a probe or tap one</span>
-      </div>
-
+    <section className="bench-area">
       <div className="items">
         {SUBJECTS.map((item, index) => {
           const red = probes.red.contact?.itemId === item.id
@@ -39,7 +34,6 @@ export function BenchItems({
               className="item"
               data-clipped={clipped}
               aria-label={`Measure ${item.name}`}
-              aria-describedby="bench-hint"
               onClick={() => onClip(item.id)}
               style={{ "--tilt": `${TILTS[index % TILTS.length]}deg` } as React.CSSProperties}
             >
@@ -74,31 +68,6 @@ export function BenchItems({
           )
         })}
       </div>
-
-      <p id="bench-hint" className="bench-area__hint">
-        Each lead is wired to the meter, so a probe reaches only as far as its
-        cable. Drag a probe onto a post, or tap a component to clip both probes.
-      </p>
-
-      <section className="notes" aria-labelledby="notes-title">
-        <h2 id="notes-title" className="notes__title">
-          Reading it
-        </h2>
-        <ol className="notes__list">
-          <li>
-            <strong>Watch the decimal.</strong> The range sets where the point
-            sits. If the display shows <em>O.L</em>, step up a range.
-          </li>
-          <li>
-            <strong>Let it settle.</strong> The display samples twice a second;
-            wait for the last digit to stop flicking before writing it down.
-          </li>
-          <li>
-            <strong>Zero first.</strong> Clip both probes to one post and trim Ω
-            zero before trusting a low resistance reading.
-          </li>
-        </ol>
-      </section>
     </section>
   )
 }

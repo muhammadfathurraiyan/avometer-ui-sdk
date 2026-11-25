@@ -171,17 +171,7 @@ export function Avometer() {
 
   return (
     <div className="bench-page">
-      <div className="bench-page__head">
-        <div>
-          <p className="bench-page__eyebrow">AVO DM-850 · Bench 04</p>
-          <h1 className="bench-page__title">Digital multimeter</h1>
-        </div>
-        <p className="bench-page__note">
-          Nine components are set out on the bench. The probes are wired into the
-          meter — drag them onto a component's posts and read the display. Turn the
-          dial by dragging its knob.
-        </p>
-      </div>
+      <h1 className="sr-only">Digital multimeter</h1>
 
       <div className="workshop" ref={sceneRef}>
         <CableLayer bench={bench} />
@@ -272,12 +262,6 @@ export function Avometer() {
                   </SliderControl>
                 </Slider>
               </div>
-            </div>
-
-            <div className="dmm-foot" aria-hidden="true">
-              <span>AVO LTD · DOVER</span>
-              <span>600 V CAT II</span>
-              <span className="avometer__sticker">CAL 03/26</span>
             </div>
 
             <div className="avometer__terminals">
