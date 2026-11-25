@@ -404,10 +404,21 @@ function cablePath(
 }
 
 const LEADS = ["red", "black"] as const
-const ROPE_STEP = 1 / 60
-const ROPE_GRAVITY = 1500
-const ROPE_DAMPING = 0.7
-const ROPE_PASSES = 18
+/** Fixed physics step: 120 Hz keeps the stiff length constraint stable. */
+const ROPE_STEP = 1 / 120
+/** Gravity in scene pixels per second squared. */
+const ROPE_GRAVITY = 7000
+/** Air and internal friction, as a velocity decay rate in 1/s. */
+const ROPE_DRAG = 7
+const ROPE_PASSES = 34
+/** Free points may not move faster than this in one step, in px. */
+const ROPE_MAX_SPEED = 36
+/** Smallest angle a bend may take, so the lead bends instead of folding. */
+const ROPE_MIN_ANGLE = (62 * Math.PI) / 180
+/** How hard the lead is steered out of the back of the probe. */
+const ROPE_TAIL_BIAS = 0.16
+/** Deepest droop drawn below the bench edge, in scene pixels. */
+const ROPE_DRAPE = 200
 
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect
@@ -430,14 +441,14 @@ function usePrefersReducedMotion() {
 }
 
 function ropeSegments(reach: number) {
-  return clamp(Math.round(reach / 18), 32, 72)
+  return clamp(Math.round(reach / 18), 24, 72)
 }
 
 function makeRope(jack: Point, end: Point, reach: number): RopePoint[] {
-  const segments = ropeSegments(reach)
   const dx = end.x - jack.x
   const dy = end.y - jack.y
   const chord = Math.hypot(dx, dy) || 1
+  const segments = ropeSegments(reach)
   const excess = Math.max(0, reach - chord)
   const sag = Math.min(chord * 0.42, Math.sqrt((3 * chord * excess) / 8))
   const points: RopePoint[] = []
@@ -450,50 +461,107 @@ function makeRope(jack: Point, end: Point, reach: number): RopePoint[] {
   return points
 }
 
-/** One fixed-step Verlet pass: gravity, then length and pin constraints. */
-function stepRope(points: RopePoint[], jack: Point, end: Point, reach: number) {
+/** Enforce the fixed segment length with a position-based constraint. */
+function solveLengths(points: RopePoint[], rest: number) {
+  const last = points.length - 1
+  for (let index = 0; index < last; index += 1) {
+    const a = points[index]
+    const b = points[index + 1]
+    const dx = b.x - a.x
+    const dy = b.y - a.y
+    const distance = Math.hypot(dx, dy) || 0.0001
+    const diff = (distance - rest) / distance
+    const aPinned = index === 0
+    const bPinned = index + 1 === last
+    if (aPinned && bPinned) continue
+    const wa = aPinned ? 0 : bPinned ? 1 : 0.5
+    const wb = bPinned ? 0 : aPinned ? 1 : 0.5
+    a.x += dx * diff * wa
+    a.y += dy * diff * wa
+    b.x -= dx * diff * wb
+    b.y -= dy * diff * wb
+  }
+}
+
+/**
+ * Bending stiffness: a real lead has a minimum bend radius. When three points
+ * make too sharp an angle, pull the middle one toward the chord of its
+ * neighbours. This is a weak angular constraint; it removes hairpins without
+ * making the cable behave like a rigid rod.
+ */
+function relaxBends(points: RopePoint[]) {
+  const last = points.length - 1
+  for (let index = 1; index < last; index += 1) {
+    const a = points[index - 1]
+    const b = points[index]
+    const c = points[index + 1]
+    const ax = a.x - b.x
+    const ay = a.y - b.y
+    const cx = c.x - b.x
+    const cy = c.y - b.y
+    const la = Math.hypot(ax, ay) || 0.0001
+    const lc = Math.hypot(cx, cy) || 0.0001
+    const cosine = clamp((ax * cx + ay * cy) / (la * lc), -1, 1)
+    const angle = Math.acos(cosine)
+    if (angle >= ROPE_MIN_ANGLE) continue
+    const strength = 0.55 * (ROPE_MIN_ANGLE - angle) / ROPE_MIN_ANGLE
+    b.x += ((a.x + c.x) / 2 - b.x) * strength
+    b.y += ((a.y + c.y) / 2 - b.y) * strength
+  }
+}
+
+/** One fixed-step Verlet pass: gravity, length constraints, then bending. */
+function stepRope(points: RopePoint[], jack: Point, end: Point, reach: number, lead: Lead) {
   const last = points.length - 1
   const gravity = ROPE_GRAVITY * ROPE_STEP * ROPE_STEP
+  const drag = Math.exp(-ROPE_DRAG * ROPE_STEP)
 
   for (let index = 1; index < last; index += 1) {
     const point = points[index]
-    const vx = (point.x - point.px) * ROPE_DAMPING
-    const vy = (point.y - point.py) * ROPE_DAMPING
+    let vx = (point.x - point.px) * drag
+    let vy = (point.y - point.py) * drag
+    const speed = Math.hypot(vx, vy)
+    if (speed > ROPE_MAX_SPEED) {
+      const scale = ROPE_MAX_SPEED / speed
+      vx *= scale
+      vy *= scale
+    }
     point.px = point.x
     point.py = point.y
     point.x += vx
     point.y += vy + gravity
   }
 
+  // One lead, one length: the segment rest length never changes.
   const rest = reach / last
   for (let pass = 0; pass < ROPE_PASSES; pass += 1) {
-    for (let index = 0; index < last; index += 1) {
-      const a = points[index]
-      const b = points[index + 1]
-      const dx = b.x - a.x
-      const dy = b.y - a.y
-      const distance = Math.hypot(dx, dy) || 0.0001
-      const diff = (distance - rest) / distance
-      const aPinned = index === 0
-      const bPinned = index + 1 === last
-      if (aPinned && bPinned) continue
-      const wa = aPinned ? 0 : bPinned ? 1 : 0.5
-      const wb = bPinned ? 0 : aPinned ? 1 : 0.5
-      a.x += dx * diff * wa
-      a.y += dy * diff * wa
-      b.x -= dx * diff * wb
-      b.y -= dy * diff * wb
-    }
+    solveLengths(points, rest)
+    if (pass % 2 === 0) relaxBends(points)
     points[0].x = jack.x
     points[0].y = jack.y
     points[last].x = end.x
     points[last].y = end.y
   }
 
+  // A cable leaves the back of the probe along the strain relief, not the tip.
+  const angle = (PROBE_TILT[lead] * Math.PI) / 180
+  const tail = points[last - 1]
+  const backX = -Math.cos(angle)
+  const backY = -Math.sin(angle)
+  const targetX = end.x + backX * rest
+  const targetY = end.y + backY * rest
+  tail.x += (targetX - tail.x) * ROPE_TAIL_BIAS
+  tail.y += (targetY - tail.y) * ROPE_TAIL_BIAS
+  solveLengths(points, rest)
+  points[0].x = jack.x
+  points[0].y = jack.y
+  points[last].x = end.x
+  points[last].y = end.y
+
   // Static friction: a lead lying on the bench stops instead of creeping.
   for (let index = 1; index < last; index += 1) {
     const point = points[index]
-    if (Math.hypot(point.x - point.px, point.y - point.py) < 0.09) {
+    if (Math.hypot(point.x - point.px, point.y - point.py) < 0.08) {
       point.px = point.x
       point.py = point.y
     }
@@ -569,10 +637,17 @@ export function CableLayer({ bench }: { bench: ReturnType<typeof useProbes> }) {
       ),
     }
 
+    // Slack that hangs past the bench edge is foreshortened, the way a lead
+    // falling off the front of the bench does, so the loop stays in the scene.
+    const edge = geometry.height
+    const drape = (point: Point): Point =>
+      point.y <= edge
+        ? point
+        : { x: point.x, y: edge + ROPE_DRAPE * Math.tanh((point.y - edge) / ROPE_DRAPE) }
     const draw = () =>
       paint({
-        red: ropePath(smoothRope(ropes.red)),
-        black: ropePath(smoothRope(ropes.black)),
+        red: ropePath(smoothRope(ropes.red).map(drape)),
+        black: ropePath(smoothRope(ropes.black).map(drape)),
       })
     draw()
 
@@ -594,13 +669,15 @@ export function CableLayer({ bench }: { bench: ReturnType<typeof useProbes> }) {
           ropes.red,
           geometry.jacks.red,
           buttOf(probesRef.current.red, "red"),
-          geometry.reach.red
+          geometry.reach.red,
+          "red"
         )
         stepRope(
           ropes.black,
           geometry.jacks.black,
           buttOf(probesRef.current.black, "black"),
-          geometry.reach.black
+          geometry.reach.black,
+          "black"
         )
         accumulator -= ROPE_STEP
         stepped += 1
@@ -620,8 +697,7 @@ export function CableLayer({ bench }: { bench: ReturnType<typeof useProbes> }) {
         }
       }
       // Once the cable stops moving, park the loop until it is disturbed again.
-      ;(window as unknown as { __cableDrift?: number }).__cableDrift = drift / freePoints
-      if (stepped && drift / freePoints < 0.02) {
+      if (stepped && drift / freePoints < 0.05) {
         running = false
         return
       }

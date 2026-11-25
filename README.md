@@ -37,10 +37,13 @@ npm run build     # production build
   a spoken label such as “Digital reading: 1.583 volts”, and the digits themselves
   are decorative to assistive technology.
 - **Probes wired into the meter** — the red lead is fixed to `VΩmA`, the black to
-  `COM`, and the cables are drawn from those jacks to the probe handles. The leads
-  are simulated as weighted rope: they sag under their own weight, trail the hand
-  while dragged, and settle without bouncing. A probe can only travel as far as its
-  lead allows; the cable goes taut at the limit.
+  `COM`, and the cables are drawn from those jacks to the probe handles. Each lead
+  has one fixed length and behaves like a weighted cable: a fixed-step Verlet
+  integrator pulls it down with gravity, drag bleeds off the swing, and length plus
+  bending constraints keep it inextensible and stop it folding back on itself. It
+  trails the hand while dragged and settles in well under a second without
+  springing. A probe can only travel as far as its lead allows; the cable goes taut
+  at the limit.
 - **Two ways to probe** — drag a probe onto a post, or click a component to clip
   both probes to its two posts. Click a probe (or press ← → while it is focused)
   to step through the test points; the cable follows.
