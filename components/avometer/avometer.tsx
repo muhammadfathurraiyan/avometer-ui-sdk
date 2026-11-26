@@ -1,14 +1,6 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import {
-  Slider,
-  SliderControl,
-  SliderIndicator,
-  SliderThumb,
-  SliderTrack,
-} from "@ui-sdk/react/slider"
-import { Switch, SwitchThumb } from "@ui-sdk/react/switch"
 import { Toggle } from "@ui-sdk/react/toggle"
 import {
   DIAL_POSITIONS,
@@ -21,8 +13,9 @@ import {
 import { registerMeterTools } from "@/lib/agent"
 import { BenchItems } from "./bench-items"
 import { DigitalReadout } from "./digital-readout"
-import { CableLayer, contactKey, ProbeLayer, useProbes, type Contact } from "./probe-layer"
+import { CableLayer, contactKey, ProbeLayer, useProbes } from "./probe-layer"
 import { RotarySelector } from "./rotary-selector"
+import { ZeroAdjust } from "./zero-adjust"
 
 const SHORTED_PROBES: Subject = {
   id: "shorted",
@@ -59,35 +52,36 @@ function useContinuityBuzzer(active: boolean) {
   }, [active])
 }
 
-function statusFor(
-  powered: boolean,
-  measurement: Measurement,
-  underTest: Subject | null,
-  positionId: string,
-  redContact: Contact | null,
-  blackContact: Contact | null
-) {
-  if (!powered) return "Instrument off. Switch on to measure."
-  if (!redContact || !blackContact)
-    return "Clip both probes to a component's posts to close the circuit."
-  if (redContact.itemId !== blackContact.itemId)
-    return "The probes are on different components. Put both on the same one."
-  if (redContact.side === blackContact.side)
-    return "Both probes on one post — that is a short. Use the two posts of a component."
-  if (underTest?.kind === "mains")
-    return "Live mains at the probes. Keep clear — demonstration only."
-  if (measurement.note === "over") return "Over range. Step up to the next range."
-  if (measurement.note === "live")
-    return "Live circuit. The ohmmeter cannot read resistance here."
-  if (measurement.note === "range")
-    return "Reading is below 6% of full scale. Step up the ohms range."
-  if (measurement.continuity) return "Continuity: the circuit is closed."
-  if (positionId.startsWith("ohm-") && measurement.value === null)
-    return "Open circuit across the probes."
-  if (positionId === "capacitance")
-    return "Charging the capacitor. The reading climbs to its value."
-  return `Probes are across the ${underTest?.name ?? "component"}.`
-}
+// NOTE: right now we dont need this
+// function statusFor(
+//   powered: boolean,
+//   measurement: Measurement,
+//   underTest: Subject | null,
+//   positionId: string,
+//   redContact: Contact | null,
+//   blackContact: Contact | null
+// ) {
+//   if (!powered) return "Instrument off. Switch on to measure."
+//   if (!redContact || !blackContact)
+//     return "Clip both probes to a component's posts to close the circuit."
+//   if (redContact.itemId !== blackContact.itemId)
+//     return "The probes are on different components. Put both on the same one."
+//   if (redContact.side === blackContact.side)
+//     return "Both probes on one post — that is a short. Use the two posts of a component."
+//   if (underTest?.kind === "mains")
+//     return "Live mains at the probes. Keep clear — demonstration only."
+//   if (measurement.note === "over") return "Over range. Step up to the next range."
+//   if (measurement.note === "live")
+//     return "Live circuit. The ohmmeter cannot read resistance here."
+//   if (measurement.note === "range")
+//     return "Reading is below 6% of full scale. Step up the ohms range."
+//   if (measurement.continuity) return "Continuity: the circuit is closed."
+//   if (positionId.startsWith("ohm-") && measurement.value === null)
+//     return "Open circuit across the probes."
+//   if (positionId === "capacitance")
+//     return "Charging the capacitor. The reading climbs to its value."
+//   return `Probes are across the ${underTest?.name ?? "component"}.`
+// }
 
 export function Avometer() {
   const [positionId, setPositionId] = useState("dcv-2.5")
@@ -192,6 +186,7 @@ export function Avometer() {
                 position={position}
                 powered={powered}
                 held={held}
+                zero={zero}
               />
               <span className="dmm-screen__glare" aria-hidden="true" />
             </div>
@@ -218,18 +213,22 @@ export function Avometer() {
               <span className="dmm-auto" aria-hidden="true">
                 Auto power off
               </span>
-              <label className="dmm-beep">
-                <Switch checked={buzzer} onCheckedChange={setBuzzer}>
-                  <SwitchThumb />
-                </Switch>
-                <span className="dmm-beep__text">Buzzer</span>
-                <span className="dmm-beep__lamp" data-on={beeping ? "true" : "false"} />
-              </label>
+              <Toggle
+                className="dmm-button dmm-button--buzzer"
+                pressed={buzzer}
+                onPressedChange={setBuzzer}
+              >
+                <span
+                  className="dmm-button__lamp"
+                  data-on={buzzer ? "true" : "false"}
+                />
+                Buzzer
+              </Toggle>
             </div>
 
-            <p className="dmm-status" role="status">
+            {/* <p className="dmm-status" role="status">
               {statusFor(powered, measurement, underTest, positionId, redContact, blackContact)}
-            </p>
+            </p> */}
 
             <div className="dmm-dial">
               <RotarySelector
@@ -237,31 +236,7 @@ export function Avometer() {
                 positions={DIAL_POSITIONS}
                 onChange={setPositionId}
               />
-            </div>
-
-            <div className="dmm-trim">
-              <div className="zero">
-                <div className="zero__head">
-                  <span>Ω zero</span>
-                  <span className="zero__value">{zero.toFixed(2)} Ω</span>
-                </div>
-                <Slider
-                  value={zero}
-                  min={0}
-                  max={2}
-                  step={0.01}
-                  onValueChange={(value) => {
-                    if (typeof value === "number") setZero(value)
-                  }}
-                >
-                  <SliderControl className="zero__control">
-                    <SliderTrack className="zero__track">
-                      <SliderIndicator className="zero__indicator" />
-                      <SliderThumb className="zero__thumb" aria-label="Zero adjust" />
-                    </SliderTrack>
-                  </SliderControl>
-                </Slider>
-              </div>
+              <ZeroAdjust value={zero} onChange={setZero} />
             </div>
 
             <div className="avometer__terminals">

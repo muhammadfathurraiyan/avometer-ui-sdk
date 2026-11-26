@@ -13,6 +13,12 @@ test("starts on a charged cell and blanks when switched off", async () => {
   render(<Avometer />)
 
   expect(readout().getAttribute("aria-label")).toContain("1.583 volts")
+  expect(
+    within(screen.getByRole("radiogroup", { name: "Function and range" })).queryByRole(
+      "radio",
+      { name: "Off" }
+    )
+  ).toBeNull()
 
   await user.click(screen.getByRole("button", { name: "Power" }))
   expect(readout().getAttribute("aria-label")).toContain("instrument off")
@@ -66,21 +72,21 @@ test("the zero trimmer steps with the arrow keys", async () => {
   const user = userEvent.setup()
   render(<Avometer />)
 
-  expect(screen.getByText("0.35 Ω")).toBeTruthy()
+  expect(screen.getByText(/0\.35 Ω/)).toBeTruthy()
   screen.getByRole("slider", { name: "Zero adjust" }).focus()
   await user.keyboard("{ArrowRight}")
 
-  expect(screen.getByText("0.36 Ω")).toBeTruthy()
+  expect(screen.getByText(/0\.36 Ω/)).toBeTruthy()
 })
 
-test("the continuity buzzer is a switch", async () => {
+test("the continuity buzzer is a button", async () => {
   const user = userEvent.setup()
   render(<Avometer />)
 
-  const buzzer = screen.getByRole("switch", { name: "Buzzer" })
-  expect(buzzer.getAttribute("aria-checked")).toBe("false")
+  const buzzer = screen.getByRole("button", { name: "Buzzer" })
+  expect(buzzer.getAttribute("aria-pressed")).toBe("false")
   await user.click(buzzer)
-  expect(buzzer.getAttribute("aria-checked")).toBe("true")
+  expect(buzzer.getAttribute("aria-pressed")).toBe("true")
 })
 
 test("an agent can find every control and change it", async () => {
@@ -127,12 +133,12 @@ test("an agent can find every control and change it", async () => {
       { ref: "Function and range", action: "setValue", args: [range!.value] },
       { ref: "Measure AA cell", action: "press" },
       { ref: "Zero adjust", action: "setValue", args: [1.2] },
-      { ref: "Buzzer", action: "setChecked", args: [true] },
+      { ref: "Buzzer", action: "setPressed", args: [true] },
     ],
   })
   expect(result.ok, result.error?.message).toBe(true)
 
   expect(readout().getAttribute("aria-label")).toContain("1.58 volts")
-  expect(screen.getByRole("switch", { name: "Buzzer" }).getAttribute("aria-checked")).toBe("true")
-  expect(screen.getByText("1.20 Ω")).toBeTruthy()
+  expect(screen.getByRole("button", { name: "Buzzer" }).getAttribute("aria-pressed")).toBe("true")
+  expect(screen.getByText(/1\.20 Ω/)).toBeTruthy()
 })

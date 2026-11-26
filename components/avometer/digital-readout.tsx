@@ -7,11 +7,13 @@ export function DigitalReadout({
   position,
   powered,
   held,
+  zero,
 }: {
   measurement: Measurement
   position: DialPosition
   powered: boolean
   held: boolean
+  zero: number
 }) {
   const text = powered ? measurement.text || "----" : ""
   const flags = [
@@ -44,6 +46,7 @@ export function DigitalReadout({
       </div>
       <div className="readout__bar readout__bar--foot" aria-hidden="true">
         <span>MANUAL RANGE</span>
+        <span className="readout__zero">ZERO {zero.toFixed(2)} Ω</span>
         <span>AUTO OFF</span>
       </div>
     </div>

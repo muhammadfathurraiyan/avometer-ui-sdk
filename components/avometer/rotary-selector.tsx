@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react"
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react"
-import { Radio, RadioGroup, RadioIndicator } from "@ui-sdk/react/radio"
+import { Radio, RadioGroup } from "@ui-sdk/react/radio"
 import type { DialPosition } from "@/lib/measurement"
 
 const SWEEP = 340
@@ -35,10 +35,8 @@ export function RotarySelector({
   const [dragAngle, setDragAngle] = useState<number | null>(null)
 
   const step = SWEEP / (positions.length - 1)
-  const index = Math.max(
-    0,
-    positions.findIndex((position) => position.id === value)
-  )
+  const foundIndex = positions.findIndex((position) => position.id === value)
+  const index = foundIndex < 0 ? 0 : foundIndex
   const knobAngle = START - index * step
 
   /** Pointer position as a clock-face angle: 0° is up, clockwise positive. */
@@ -98,6 +96,23 @@ export function RotarySelector({
 
   return (
     <div className="dial" ref={dialRef}>
+      <div className="dial__ticks" aria-hidden="true">
+        {positions.map((position, positionIndex) => {
+          const angle = START - positionIndex * step
+          const startsGroup =
+            positionIndex === 0 ||
+            positions[positionIndex - 1].group !== position.group
+          return (
+            <span
+              key={position.id}
+              className="dial__tick"
+              data-start={startsGroup ? "true" : "false"}
+              style={{ "--tick-angle": `${angle}deg` } as CSSProperties}
+            />
+          )
+        })}
+      </div>
+
       <div
         className="dial__knob"
         style={{ "--knob-angle": `${dragAngle ?? knobAngle}deg` } as CSSProperties}
@@ -110,8 +125,9 @@ export function RotarySelector({
         data-testid="dial-knob"
       >
         <span className="dial__cap" />
-        <span className="dial__pointer" />
-        <span className="dial__grip" />
+        <span className="dial__pointer">
+          <span className="dial__handle" />
+        </span>
       </div>
 
       <RadioGroup
@@ -128,7 +144,8 @@ export function RotarySelector({
           const startsGroup =
             positionIndex === 0 ||
             positions[positionIndex - 1].group !== position.group
-          const showTag = position.group !== "OFF" && startsGroup
+          const showTag =
+            position.group === "AC V" ? position.id === "acv-10" : startsGroup
           return (
             <Radio
               key={position.id}
@@ -137,10 +154,11 @@ export function RotarySelector({
               data-group={position.group}
               style={{ "--stop-angle": `${angle}deg` } as CSSProperties}
             >
-              <RadioIndicator aria-hidden="true" />
               <span className="dial__print" aria-hidden="true">
-                {showTag ? <span className="dial__tag">{position.group}</span> : null}
-                <span className="dial__value">{position.short || "OFF"}</span>
+                {showTag ? (
+                  <span className="dial__tag">{position.group}</span>
+                ) : null}
+                <span className="dial__value">{position.short}</span>
               </span>
               <span className="sr-only">{position.name}</span>
             </Radio>

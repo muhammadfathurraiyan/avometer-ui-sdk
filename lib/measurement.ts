@@ -242,30 +242,31 @@ const RANGES: DialPosition[] = [
 ]
 
 /**
- * The physical order of the dial, running counter-clockwise from OFF at twelve
- * o'clock: ohms, capacitance, diode, hFE, current, AC volts, then DC volts back
- * up the right-hand side. The scale stops just short of a full turn.
+ * The physical order of the dial, running counter-clockwise from twelve
+ * o'clock: DC volts down the left, current across the bottom, ohms up the
+ * right, then capacitance and AC volts closing the turn. The scale stops just
+ * short of a full turn. There is no OFF detent: the Power button switches the
+ * instrument, as on the real handheld.
  */
 const DIAL_ORDER = [
-  "off",
-  "ohm-1",
-  "ohm-100",
-  "ohm-10k",
-  "capacitance",
-  "diode",
-  "hfe",
-  "dca-5m",
-  "dca-500m",
-  "dca-10",
-  "acv-10",
-  "acv-50",
-  "acv-250",
-  "acv-1000",
   "dcv-1000",
   "dcv-250",
   "dcv-50",
   "dcv-10",
   "dcv-2.5",
+  "dca-10",
+  "dca-500m",
+  "dca-5m",
+  "ohm-1",
+  "ohm-100",
+  "ohm-10k",
+  "hfe",
+  "diode",
+  "capacitance",
+  "acv-1000",
+  "acv-250",
+  "acv-50",
+  "acv-10",
 ]
 
 function rangeById(id: string) {
@@ -607,7 +608,7 @@ export function measure(
 }
 
 export function positionById(id: string): DialPosition {
-  return DIAL_POSITIONS.find((position) => position.id === id) ?? DIAL_POSITIONS[0]
+  return RANGES.find((position) => position.id === id) ?? DIAL_POSITIONS[0]
 }
 
 export function subjectById(id: string): Subject {

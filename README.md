@@ -3,7 +3,7 @@
 A working bench simulation of a handheld digital multimeter, built with
 [ui-sdk](https://ui-sdk.dev) (`@ui-sdk/react` + `@ui-sdk/core`) on Next.js. The
 meter borrows its look from an AVO DM-850: orange over-moulded case, three jacks
-along the bottom edge, a large LCD and a 19-detent range dial.
+along the bottom edge, a large LCD and an 18-detent range dial.
 
 Nine components are laid out on the wooden bench. Plug the probes onto their
 posts, choose a range, and read the display. Everything is simulated — there is
@@ -26,13 +26,14 @@ npm run build     # production build
 
 ## What is on the bench
 
-- **19-detent function selector** — off, DC volts (2.5 / 10 / 50 / 250 / 1000),
+- **18-detent function selector** — DC volts (2.5 / 10 / 50 / 250 / 1000),
   AC volts (10 / 50 / 250 / 1000), DC current (5 mA / 500 mA / 10 A), ohms
   (×1 / ×100 / ×10k), diode test, capacitance, transistor hFE. The scale runs
-  just short of a full turn, with OFF at twelve o'clock and the ohms ranges
-  down the left side. Drag the black knob to turn it, or click a printed range.
-  The selector is a `radiogroup`; every detent is a named `radio`, so arrow keys
-  and screen readers work.
+  just short of a full turn, with DC volts down the left, AC volts down the
+  right and the ohms ranges along the bottom-right. There is no OFF detent; the
+  Power button switches the instrument, as on the real handheld. Drag the bar
+  knob to turn it, or click a printed range. The selector is a `radiogroup`; every detent is a named
+  `radio`, so arrow keys and screen readers work.
 - **3½-digit LCD** — the reading is the primary display. The readout group carries
   a spoken label such as “Digital reading: 1.583 volts”, and the digits themselves
   are decorative to assistive technology.
@@ -47,8 +48,10 @@ npm run build     # production build
 - **Two ways to probe** — drag a probe onto a post, or click a component to clip
   both probes to its two posts. Click a probe (or press ← → while it is focused)
   to step through the test points; the cable follows.
-- **Controls** — power, hold (freezes the displayed value), continuity buzzer
-  (real Web Audio tone, muted by default), and the ohms zero trimmer.
+- **Controls** — power, hold (freezes the displayed value), a continuity buzzer
+  button (real Web Audio tone, muted by default), and the rotary ohms-zero
+  trimmer at the top right of the dial. The trimmer's setting is shown on the
+  LCD, not printed on the case.
 - **Nine components** — 4.7 kΩ resistor, 1N4148 diode, red LED, 470 µF capacitor,
   AA cell, 230 V mains outlet, 2N3904 transistor, open terminals and a solder
   bridge. Each has plausible source resistance, forward drop, leakage and gain.
@@ -92,7 +95,8 @@ components/avometer/
   bench-items.tsx      the nine components, posts and tags
   probe-layer.tsx      rope-simulated cables, probe dragging, contact lookup
   digital-readout.tsx  LCD display
-  rotary-selector.tsx  19-detent range dial
+  rotary-selector.tsx  18-detent range dial
+  zero-adjust.tsx      rotary ohms-zero trimmer
   part-glyph.tsx       SVG drawings for each component
 lib/
   measurement.ts       ranges, subjects, measurement simulation
@@ -103,7 +107,7 @@ lib/
 
 `lib/agent.ts` creates a ui-sdk agent on demand and registers the page’s tools.
 An agent can snapshot the display parameters, press any `Measure …` component
-button to clip both probes, set the range, zero trimmer and switches, and read
+button to clip both probes, set the range, zero trimmer and buttons, and read
 the accessible value from the readout group. The component test exercises that
 path with `agent.snapshot()`, `agent.query()` and `agent.act()`.
 
